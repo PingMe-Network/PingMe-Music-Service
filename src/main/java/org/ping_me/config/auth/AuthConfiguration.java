@@ -84,16 +84,6 @@ public class AuthConfiguration {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    @Bean("wsAuthManager")
-    public AuthenticationManager wsAuthManager(
-            JwtAuthenticationConverter jwtAuthenticationConverter,
-            JwtDecoder jwtDecoder
-    ) {
-        var provider = new JwtAuthenticationProvider(jwtDecoder);
-        provider.setJwtAuthenticationConverter(jwtAuthenticationConverter);
-        return new ProviderManager(provider);
-    }
-
     private SecretKey getSecretKey() {
         byte[] keyBytes = Base64.from(jwtKey).decode();
 
