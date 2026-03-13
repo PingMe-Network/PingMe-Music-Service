@@ -6,15 +6,11 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.data.mongodb.config.EnableMongoAuditing;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 
 @SpringBootApplication
 @EnableJpaAuditing(auditorAwareRef = "auditorProvider")
-@EnableMongoAuditing
 @EnableCaching
 @EnableJpaRepositories(basePackages = "org.ping_me.repository.jpa")
 @EnableFeignClients
