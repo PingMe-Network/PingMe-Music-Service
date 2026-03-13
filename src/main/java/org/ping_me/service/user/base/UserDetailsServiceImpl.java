@@ -1,6 +1,7 @@
 package org.ping_me.service.user.base;
 
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.ping_me.repository.jpa.auth.UserRepository;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,7 +25,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public @NonNull UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         // Truy vấn User trong DB theo email.
         // Nếu không tìm thấy sẽ ném ra UsernameNotFoundException.
         // (User ở đây là entity: me.huynhducphu.PingMe_Backend.model.User)
