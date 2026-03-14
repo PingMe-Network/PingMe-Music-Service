@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.ping_me.dto.response.music.misc.PlaylistDetailDto;
 import org.ping_me.dto.response.music.misc.PlaylistDto;
-import org.ping_me.model.User;
+import org.ping_me.model.user.User;
 import org.ping_me.model.music.Playlist;
 import org.ping_me.model.music.PlaylistSong;
 import org.ping_me.repository.jpa.PlaylistRepository;

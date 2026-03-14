@@ -3,7 +3,7 @@ package org.ping_me.model.music;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.ping_me.model.User;
+import org.ping_me.model.user.User;
 import org.ping_me.model.common.BaseEntity;
 
 import java.time.LocalDateTime;
@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-@FieldDefaults(level =  AccessLevel.PRIVATE)
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FavoriteSong extends BaseEntity {
 
     @Id

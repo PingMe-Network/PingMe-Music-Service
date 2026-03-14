@@ -1,6 +1,6 @@
 package org.ping_me.repository.jpa;
 
-import org.ping_me.model.User;
+import org.ping_me.model.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,10 +1,9 @@
-package org.ping_me.model;
+package org.ping_me.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.ping_me.model.authorization.Role;
 import org.ping_me.model.common.BaseEntity;
 import org.ping_me.model.constant.AccountStatus;
 import org.ping_me.model.constant.AuthProvider;
