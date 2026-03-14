@@ -13,7 +13,7 @@ import org.ping_me.dto.response.music.misc.ArtistSummaryDto;
 import org.ping_me.dto.response.music.misc.GenreDto;
 import org.ping_me.model.constant.ArtistRole;
 import org.ping_me.model.music.*;
-import org.ping_me.repository.jpa.music.*;
+import org.ping_me.repository.jpa.*;
 import org.ping_me.service.music.SongService;
 import org.ping_me.service.music.util.AudioUtil;
 import org.ping_me.service.user.CurrentUserProvider;
@@ -105,8 +105,8 @@ public class SongServiceImpl implements SongService {
         int end = Math.min(start + pageable.getPageSize(), flattened.size());
 
         List<SongResponse> pagedContent = start >= flattened.size()
-            ? Collections.emptyList()
-            : flattened.subList(start, end);
+                ? Collections.emptyList()
+                : flattened.subList(start, end);
         return new PageImpl<>(pagedContent, pageable, flattened.size());
     }
 

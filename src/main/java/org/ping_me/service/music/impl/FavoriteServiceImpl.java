@@ -5,9 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.ping_me.dto.response.music.misc.FavoriteDto;
 import org.ping_me.model.music.FavoriteSong;
-import org.ping_me.repository.jpa.auth.UserRepository;
-import org.ping_me.repository.jpa.music.FavoriteSongRepository;
-import org.ping_me.repository.jpa.music.SongRepository;
+import org.ping_me.repository.jpa.UserRepository;
+import org.ping_me.repository.jpa.FavoriteSongRepository;
+import org.ping_me.repository.jpa.SongRepository;
 import org.ping_me.service.music.FavoriteService;
 import org.ping_me.service.user.CurrentUserProvider;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     // Provider
     CurrentUserProvider currentUserProvider;
-    
+
     @Override
     public List<FavoriteDto> getFavorites() {
         var userId = currentUserProvider.get().getId();
