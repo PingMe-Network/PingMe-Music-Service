@@ -4,7 +4,7 @@ package org.ping_me.service.music.impl;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.ping_me.dto.response.music.misc.TopSongPlayCounterDto;
-import org.ping_me.repository.jpa.music.SongPlayHistoryRepository;
+import org.ping_me.repository.jpa.SongPlayHistoryRepository;
 import org.ping_me.service.music.SongPlayHistoryService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
