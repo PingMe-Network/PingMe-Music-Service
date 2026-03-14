@@ -3,8 +3,8 @@ package org.ping_me.model.music;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.ping_me.model.user.User;
 import org.ping_me.model.common.BaseEntity;
+import org.ping_me.model.user.User;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;

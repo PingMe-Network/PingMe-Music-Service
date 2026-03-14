@@ -2,8 +2,8 @@ package org.ping_me.service.user.impl;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.ping_me.model.user.User;
 import org.ping_me.model.constant.AccountStatus;
+import org.ping_me.model.user.User;
 import org.ping_me.repository.jpa.UserRepository;
 import org.ping_me.service.user.CurrentUserProvider;
 import org.springframework.security.authentication.DisabledException;
