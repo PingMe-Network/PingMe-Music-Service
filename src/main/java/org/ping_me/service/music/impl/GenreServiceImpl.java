@@ -7,7 +7,7 @@ import org.ping_me.dto.request.music.GenreRequest;
 import org.ping_me.dto.response.music.GenreResponse;
 import org.ping_me.dto.response.music.misc.GenreDto;
 import org.ping_me.model.music.Genre;
-import org.ping_me.repository.jpa.GenreRepository;
+import org.ping_me.repository.music.GenreRepository;
 import org.ping_me.service.music.GenreService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
