@@ -4,9 +4,11 @@ import org.ping_me.model.music.Album;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -27,4 +29,12 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
     Optional<Album> findByIdIgnoringDeleted(@Param("id") Long id);
 
     Page<Album> findAlbumsByTitleContainingIgnoreCase(String title, Pageable pageable);
+
+    Page<Album> findAllByOrderByPlayCountDesc(Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE Album a SET a.playCount = a.playCount + 1 WHERE a.id = :id")
+    void incrementPlayCount(@Param("id") Long id);
+
 }

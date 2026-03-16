@@ -72,6 +72,18 @@ public class AlbumController {
         return ResponseEntity.ok(new ApiResponse<>(new PageResponse<>(page)));
     }
 
+    @Operation(
+            summary = "Lấy album phổ biến",
+            description = "Trả về danh sách album theo lượt nghe giảm dần, hỗ trợ phân trang"
+    )
+    @GetMapping("/popular")
+    public ResponseEntity<ApiResponse<PageResponse<AlbumResponse>>> getPopularAlbums(
+            @PageableDefault(size = 5, sort = "playCount", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<AlbumResponse> page = albumService.getPopularAlbums(pageable);
+        return ResponseEntity.ok(new ApiResponse<>(new PageResponse<>(page)));
+    }
+
     // ======================= CREATE =======================
     @Operation(
             summary = "Tạo mới album",
@@ -157,6 +169,19 @@ public class AlbumController {
             @PathVariable Long id
     ) {
         albumService.restore(id);
+        return ResponseEntity.ok(new ApiResponse<>(null));
+    }
+
+    @Operation(
+            summary = "Tăng lượt nghe album",
+            description = "Tăng play count khi người dùng phát nhạc từ ngữ cảnh album"
+    )
+    @PostMapping("/{id}/play")
+    public ResponseEntity<ApiResponse<Void>> increasePlayCount(
+            @Parameter(description = "ID album", example = "1")
+            @PathVariable Long id
+    ) {
+        albumService.increasePlayCount(id);
         return ResponseEntity.ok(new ApiResponse<>(null));
     }
 }

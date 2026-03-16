@@ -1,36 +1,64 @@
 package org.ping_me.service.music.impl;
 
 import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.ping_me.config.s3.S3Service;
 import org.ping_me.dto.request.music.AlbumRequest;
 import org.ping_me.dto.response.music.AlbumResponse;
 import org.ping_me.model.music.Album;
+import org.ping_me.model.music.AlbumPlayHistory;
 import org.ping_me.model.music.Artist;
+import org.ping_me.repository.jpa.AlbumPlayHistoryRepository;
 import org.ping_me.repository.jpa.AlbumRepository;
 import org.ping_me.repository.jpa.ArtistRepository;
 import org.ping_me.service.music.AlbumService;
+import org.ping_me.service.user.CurrentUserProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AlbumServiceImpl implements AlbumService {
 
     // Repository
     AlbumRepository albumRepository;
     ArtistRepository artistRepository;
+    AlbumPlayHistoryRepository albumPlayHistoryRepository;
 
     // Service
     S3Service s3Service;
+
+    // Provider
+    CurrentUserProvider currentUserProvider;
+
+    // Redis
+    RedisTemplate<String, String> redis;
+
+    public AlbumServiceImpl(
+            AlbumRepository albumRepository,
+            ArtistRepository artistRepository,
+            AlbumPlayHistoryRepository albumPlayHistoryRepository,
+            S3Service s3Service,
+            CurrentUserProvider currentUserProvider,
+            @Qualifier("redisPlayCountTemplate") RedisTemplate<String, String> redis
+    ) {
+        this.albumRepository = albumRepository;
+        this.artistRepository = artistRepository;
+        this.albumPlayHistoryRepository = albumPlayHistoryRepository;
+        this.s3Service = s3Service;
+        this.currentUserProvider = currentUserProvider;
+        this.redis = redis;
+    }
 
     @Override
     public Page<AlbumResponse> getAllAlbums(Pageable pageable) {
@@ -49,6 +77,12 @@ public class AlbumServiceImpl implements AlbumService {
     public Page<AlbumResponse> getAlbumByTitleContainIgnoreCase(String title, Pageable pageable) {
         Page<Album> albums = albumRepository.findAlbumsByTitleContainingIgnoreCase(title, pageable);
         return albums.map(this::mapToResponse);
+    }
+
+    @Override
+    public Page<AlbumResponse> getPopularAlbums(Pageable pageable) {
+        return albumRepository.findAllByOrderByPlayCountDesc(pageable)
+                .map(this::mapToResponse);
     }
 
     @Override
@@ -168,6 +202,34 @@ public class AlbumServiceImpl implements AlbumService {
 
         album.setDeleted(false);
         albumRepository.save(album);
+    }
+
+    @Override
+    @Transactional
+    public void increasePlayCount(Long albumId) {
+        var userId = currentUserProvider.get().getId();
+        String redisKey = "play:album:" + userId + ":" + albumId;
+
+        // Debounce để tránh spam tăng lượt nghe khi user bấm play liên tục.
+        Boolean alreadyPlayed = redis.hasKey(redisKey);
+        if (Boolean.TRUE.equals(alreadyPlayed)) {
+            return;
+        }
+
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy album với ID: " + albumId));
+
+        albumRepository.incrementPlayCount(albumId);
+
+        albumPlayHistoryRepository.save(
+                AlbumPlayHistory.builder()
+                        .album(album)
+                        .userId(userId)
+                        .playedAt(LocalDateTime.now())
+                        .build()
+        );
+
+        redis.opsForValue().set(redisKey, "1", Duration.ofSeconds(30));
     }
 
     // --- Helper Methods ---
