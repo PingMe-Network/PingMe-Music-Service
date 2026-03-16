@@ -7,7 +7,7 @@ import org.ping_me.config.s3.S3Service;
 import org.ping_me.dto.request.music.ArtistRequest;
 import org.ping_me.dto.response.music.ArtistResponse;
 import org.ping_me.model.music.Artist;
-import org.ping_me.repository.jpa.ArtistRepository;
+import org.ping_me.repository.music.ArtistRepository;
 import org.ping_me.service.music.ArtistService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

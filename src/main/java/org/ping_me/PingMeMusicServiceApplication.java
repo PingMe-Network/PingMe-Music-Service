@@ -11,7 +11,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 @SpringBootApplication
 @EnableJpaAuditing(auditorAwareRef = "auditorProvider")
 @EnableCaching
-@EnableJpaRepositories(basePackages = "org.ping_me.repository.jpa")
+@EnableJpaRepositories(basePackages = "org.ping_me.repository")
 @EnableAsync
 @EnableMethodSecurity
 public class PingMeMusicServiceApplication {

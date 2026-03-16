@@ -13,7 +13,7 @@ import org.ping_me.dto.response.music.misc.ArtistSummaryDto;
 import org.ping_me.dto.response.music.misc.GenreDto;
 import org.ping_me.model.constant.ArtistRole;
 import org.ping_me.model.music.*;
-import org.ping_me.repository.jpa.*;
+import org.ping_me.repository.music.*;
 import org.ping_me.service.music.SongService;
 import org.ping_me.service.music.util.AudioUtil;
 import org.ping_me.service.user.CurrentUserProvider;
