@@ -4,6 +4,7 @@ import org.ping_me.dto.request.music.AlbumRequest;
 import org.ping_me.dto.response.music.AlbumResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -21,6 +22,8 @@ public interface AlbumService {
 
     Page<AlbumResponse> getAlbumByTitleContainIgnoreCase(String title, Pageable pageable);
 
+    Page<AlbumResponse> getPopularAlbums(Pageable pageable);
+
     AlbumResponse save(AlbumRequest albumRequestDto, MultipartFile albumCoverImg);
 
     AlbumResponse update(Long albumId, AlbumRequest albumRequestDto, MultipartFile albumCoverImg);
@@ -30,4 +33,7 @@ public interface AlbumService {
     void hardDelete(Long id);
 
     void restore(Long id);
+
+    @Transactional
+    void increasePlayCount(Long albumId);
 }
