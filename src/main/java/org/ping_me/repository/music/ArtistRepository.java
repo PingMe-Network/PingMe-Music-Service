@@ -27,7 +27,6 @@ public interface ArtistRepository extends JpaRepository<Artist, Long> {
     boolean hasSongRoles(@Param("artistId") Long artistId);
 
     // --- THÊM MỚI ---
-
     // Tìm nghệ sĩ đang nằm trong thùng rác (để Restore)
     @Query(value = "SELECT * FROM artists WHERE id = :id AND is_deleted = true", nativeQuery = true)
     java.util.Optional<Artist> findSoftDeletedArtist(@Param("id") Long id);

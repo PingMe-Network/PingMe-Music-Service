@@ -23,9 +23,12 @@ import java.util.Optional;
 
 @Repository
 public interface SongRepository extends JpaRepository<Song, Long> {
-    @Override
-    @EntityGraph(attributePaths = {"artistRoles.artist", "genres", "albums"})
-    Page<Song> findAll(Pageable pageable);
+
+    @Query(
+            value = "SELECT s.id FROM Song s",
+            countQuery = "SELECT COUNT(s.id) FROM Song s"
+    )
+    Page<Long> findSongIds(Pageable pageable);
 
     // Load Song cùng lúc với ArtistRoles, Artist, Genres và Albums để tránh lỗi LazyLoading hoặc N+1 query
     @Query("SELECT s FROM Song s " +
@@ -41,17 +44,12 @@ public interface SongRepository extends JpaRepository<Song, Long> {
     @Query("UPDATE Song s SET s.playCount = s.playCount + 1 WHERE s.id = :id")
     void incrementPlayCount(@Param("id") Long id, Long userId);
 
-    @EntityGraph(attributePaths = {"artistRoles.artist", "genres", "albums"})
-    @Query("SELECT DISTINCT s FROM Song s ORDER BY s.playCount DESC")
-    List<Song> findSongsByPlayCount(Pageable pageable);
 
     @Query(value = "SELECT * FROM songs WHERE id = :id AND is_deleted = true", nativeQuery = true)
     Optional<Song> findSoftDeletedSong(@Param("id") Long id);
 
     @Query(value = "SELECT * FROM songs WHERE id = :id", nativeQuery = true)
     Optional<Song> findByIdIgnoringDeleted(@Param("id") Long id);
-
-    Page<Song> findSongsByTitleContainingIgnoreCase(String title, Pageable pageable);
 
     @Query("""
             SELECT DISTINCT s FROM Song s
@@ -64,16 +62,26 @@ public interface SongRepository extends JpaRepository<Song, Long> {
             """)
     List<Song> findSongsWithAlbumsByTitle(@Param("title") String title);
 
-    @EntityGraph(attributePaths = {"artistRoles.artist", "genres", "albums"})
-    @Query("SELECT DISTINCT s FROM Song s JOIN s.genres g WHERE g.id = :genreId")
-    Page<Song> findSongsByGenreId(@Param("genreId") Long genreId, Pageable pageable);
+    @Query(
+            value = "SELECT DISTINCT s.id FROM Song s JOIN s.genres g WHERE g.id = :genreId",
+            countQuery = "SELECT COUNT(DISTINCT s.id) FROM Song s JOIN s.genres g WHERE g.id = :genreId"
+    )
+    Page<Long> findSongIdsByGenreId(@Param("genreId") Long genreId, Pageable pageable);
+
+    @Query(
+            value = "SELECT DISTINCT s.id FROM Song s JOIN s.albums a WHERE a.id = :albumId",
+            countQuery = "SELECT COUNT(DISTINCT s.id) FROM Song s JOIN s.albums a WHERE a.id = :albumId"
+    )
+    Page<Long> findSongIdsByAlbumId(@Param("albumId") Long albumId, Pageable pageable);
+
+    @Query(
+            value = "SELECT DISTINCT s.id FROM Song s JOIN s.artistRoles ar JOIN ar.artist at WHERE at.id = :artistId",
+            countQuery = "SELECT COUNT(DISTINCT s.id) FROM Song s JOIN s.artistRoles ar JOIN ar.artist at WHERE at.id = :artistId"
+    )
+    Page<Long> findSongIdsByArtistId(@Param("artistId") Long artistId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"artistRoles.artist", "genres", "albums"})
-    @Query("SELECT DISTINCT s FROM Song s JOIN s.albums a WHERE a.id = :albumId")
-    Page<Song> findSongsByAlbumId(@Param("albumId") Long albumId, Pageable pageable);
-
-    @EntityGraph(attributePaths = {"artistRoles.artist", "genres", "albums"})
-    @Query("SELECT DISTINCT s FROM Song s JOIN s.artistRoles ar JOIN ar.artist at WHERE at.id = :artistId")
-    Page<Song> findSongsByArtistId(@Param("artistId") Long artistId, Pageable pageable);
+    @Query("SELECT DISTINCT s FROM Song s WHERE s.id IN :ids")
+    List<Song> findSongsWithDetailsByIds(@Param("ids") List<Long> ids);
 
 }

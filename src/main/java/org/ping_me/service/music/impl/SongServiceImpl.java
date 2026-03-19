@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,8 +82,9 @@ public class SongServiceImpl implements SongService {
 
     @Override
     public Page<SongResponseWithAllAlbum> getAllSongs(Pageable pageable) {
-        Page<Song> songPage = songRepository.findAll(pageable);
-        return songPage.map(this::mapToSongResponseWithAllAlbums);
+        Pageable effectivePageable = withDefaultSort(pageable, Sort.by(Sort.Direction.ASC, "title"));
+        Page<Long> songIdPage = songRepository.findSongIds(effectivePageable);
+        return buildPagedSongResponse(songIdPage, effectivePageable);
     }
 
 
@@ -117,8 +119,9 @@ public class SongServiceImpl implements SongService {
             throw new RuntimeException("Genre ID không được trống");
         }
 
-        Page<Song> songs = songRepository.findSongsByGenreId(id, pageable);
-        return songs.map(this::mapToSongResponseWithAllAlbums);
+        Pageable effectivePageable = withDefaultSort(pageable, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Long> songIdPage = songRepository.findSongIdsByGenreId(id, effectivePageable);
+        return buildPagedSongResponse(songIdPage, effectivePageable);
     }
 
 
@@ -128,8 +131,9 @@ public class SongServiceImpl implements SongService {
             throw new RuntimeException("Album ID không được trống");
         }
 
-        Page<Song> songs = songRepository.findSongsByAlbumId(id, pageable);
-        return songs.map(this::mapToSongResponseWithAllAlbums);
+        Pageable effectivePageable = withDefaultSort(pageable, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Long> songIdPage = songRepository.findSongIdsByAlbumId(id, effectivePageable);
+        return buildPagedSongResponse(songIdPage, effectivePageable);
     }
 
 
@@ -139,21 +143,44 @@ public class SongServiceImpl implements SongService {
             throw new RuntimeException("Artist ID không được trống");
         }
 
-        Page<Song> songs = songRepository.findSongsByArtistId(artistId, pageable);
-        return songs.map(this::mapToSongResponseWithAllAlbums);
+        Pageable effectivePageable = withDefaultSort(pageable, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Long> songIdPage = songRepository.findSongIdsByArtistId(artistId, effectivePageable);
+        return buildPagedSongResponse(songIdPage, effectivePageable);
     }
 
 
     // Cho phép truyền số lượng bài muốn lấy
     public List<SongResponseWithAllAlbum> getTopPlayedSongs(int limit) {
-        Pageable pageable = PageRequest.of(0, limit);
-        List<Song> topSongs = songRepository.findSongsByPlayCount(pageable);
-        List<SongResponseWithAllAlbum> songResponsesWithAllAlbum = new ArrayList<>();
-        topSongs.forEach(x -> {
-            SongResponseWithAllAlbum songResponseWithAllAlbum = mapToSongResponseWithAllAlbums(x);
-            songResponsesWithAllAlbum.add(songResponseWithAllAlbum);
-        });
-        return songResponsesWithAllAlbum;
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "playCount"));
+        Page<Long> songIdPage = songRepository.findSongIds(pageable);
+        return buildPagedSongResponse(songIdPage, pageable).getContent();
+    }
+
+    private Pageable withDefaultSort(Pageable pageable, Sort defaultSort) {
+        return pageable.getSort().isSorted()
+                ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), defaultSort);
+    }
+
+    private Page<SongResponseWithAllAlbum> buildPagedSongResponse(Page<Long> songIdPage, Pageable pageable) {
+        if (songIdPage.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Song> songs = songRepository.findSongsWithDetailsByIds(songIdPage.getContent());
+        Map<Long, Song> songsById = songs.stream().collect(Collectors.toMap(
+                Song::getId,
+                song -> song,
+                (existing, ignored) -> existing
+        ));
+
+        List<SongResponseWithAllAlbum> orderedContent = songIdPage.getContent().stream()
+                .map(songsById::get)
+                .filter(Objects::nonNull)
+                .map(this::mapToSongResponseWithAllAlbums)
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(orderedContent, pageable, songIdPage.getTotalElements());
     }
 
     @Override
