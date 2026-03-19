@@ -2,7 +2,7 @@ package org.ping_me.service.user.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.ping_me.repository.jpa.UserRepository;
+import org.ping_me.repository.music.UserRepository;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
