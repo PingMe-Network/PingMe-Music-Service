@@ -3,6 +3,7 @@ package org.ping_me.model.music;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLRestriction;
 import org.ping_me.model.common.BaseEntity;
 
@@ -65,6 +66,7 @@ public class Song extends BaseEntity {
      */
 
     @OneToMany(mappedBy = "song", cascade = CascadeType.ALL)
+    @BatchSize(size = 25)
     @ToString.Exclude
     List<SongArtistRole> artistRoles;
 
@@ -78,6 +80,7 @@ public class Song extends BaseEntity {
     //Một bài hat có thể xuất hiện trong nhiều album khác nhau (album gốc, album tuyển tập, v.v.)
     //Và 1 album có thể chứa nhiều bài hát
     @ManyToMany(mappedBy = "songs")
+    @BatchSize(size = 25)
     @ToString.Exclude
     Set<Album> albums;
 
@@ -86,6 +89,7 @@ public class Song extends BaseEntity {
     //Một bài hát có thể thuộc nhiều thể loại khác nhau (pop, rock, jazz, v.v.)
     //Và một thể loại có thể bao gồm nhiều bài hát
     @ManyToMany
+    @BatchSize(size = 25)
     @JoinTable(
             name = "song_genre",
             joinColumns = @JoinColumn(name = "song_id"),
