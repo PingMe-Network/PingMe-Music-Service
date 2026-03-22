@@ -20,82 +20,48 @@ import java.util.Arrays;
 public class SecurityConfiguration {
 
     private static final String[] WHITELIST = {
-            // Authentication
-            "/auth/login",
-            "/auth/mobile/login",
-            "/auth/logout",
-            "/auth/register",
-            "/auth/refresh",
-            "/auth/admin/login",
-
-            // Forget password
-            "/auth/forget-password",
-            "/mail-management/api/v1/mails/send-otp",
-            "/mail-management/api/v1/mails/otp-verification",
-
-            // OTP
-            "/otp/send",
-            "/otp/verify",
-
             // API DOCS
             "/swagger-ui/**",
             "/v3/api-docs/**",
 
             // WebSocket
-            // Bỏ qua kiểm tra tại lớp BearerTokenFilter
-            // Kiểm tra tại lớp HandShakeInterceptor
-            "/ws/**",
+            // Chú ý: Nếu trong application.properties bạn có cấu hình server.servlet.context-path=/core-service
+            // thì ở đây Spring Security sẽ tự động bỏ qua chữ /core-service. Bạn chỉ cần ghi là "/ws/**"
+            "/core-service/ws/**", // Tạm thời mình giữ nguyên theo code của bạn
 
-            // Health check - Kiểm tra nhịp tim
+            // Health check
             "/actuator/health",
-            "/actuator/health/**",
-
+            "/actuator/health/**"
     };
-
-    @Value("${app.cors.allowed-origins}")
-    private String allowedOrigins;
 
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
-            CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-            SkipPathBearerTokenResolver skipPathBearerTokenResolver
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint
     ) throws Exception {
         httpSecurity
+                // 1. TẮT CORS (Gateway đã thầu vụ này rồi)
+                .cors(AbstractHttpConfigurer::disable)
+
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(WHITELIST).permitAll()
                         .anyRequest().authenticated()
                 )
+
+                // 2. Cấu hình JWT mặc định (Xóa cái SkipPathBearer đi là hết lỗi)
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(Customizer.withDefaults())
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
-                        .bearerTokenResolver(skipPathBearerTokenResolver)
-                )
-                .cors(Customizer.withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
         return httpSecurity.build();
     }
-
-    @Bean
-    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        return source;
-
-    }
-
-
 }
