@@ -1,4 +1,4 @@
-package org.ping_me.dto.response.authentication;
+package org.ping_me.dto.response.auth;
 
 import lombok.*;
 

@@ -1,4 +1,4 @@
-package org.ping_me.dto.request.authentication;
+package org.ping_me.dto.request.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

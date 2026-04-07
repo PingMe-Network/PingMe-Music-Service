@@ -1,9 +1,9 @@
-package org.ping_me.dto.response.authentication.auth;
+package org.ping_me.dto.response.auth.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.ping_me.dto.response.authentication.CurrentUserSessionResponse;
+import org.ping_me.dto.response.auth.CurrentUserSessionResponse;
 
 /**
  * Admin 1/10/2026

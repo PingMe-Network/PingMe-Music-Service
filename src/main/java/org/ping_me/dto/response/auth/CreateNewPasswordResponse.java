@@ -1,4 +1,4 @@
-package org.ping_me.dto.response.authentication;
+package org.ping_me.dto.response.auth;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -6,7 +6,7 @@ import lombok.experimental.FieldDefaults;
 /**
  * @author : user664dntp
  * @mailto : phatdang19052004@gmail.com
- * @created : 9/02/2026, Monday
+ * @created : 22/01/2026, Thursday
  **/
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,6 +14,6 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class ActiveAccountResponse {
-    Boolean isActivated;
+public class CreateNewPasswordResponse {
+    Boolean isPasswordChanged;
 }
