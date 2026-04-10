@@ -2,8 +2,10 @@ package org.ping_me.service.music.impl;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.ping_me.config.s3.S3Service;
+import org.ping_me.dto.event.MusicListeningEvent;
 import org.ping_me.dto.request.music.SongRequest;
 import org.ping_me.dto.request.music.misc.SongArtistRequest;
 import org.ping_me.dto.response.music.SongResponse;
@@ -18,12 +20,14 @@ import org.ping_me.service.music.SongService;
 import org.ping_me.service.music.util.AudioUtil;
 import org.ping_me.service.user.CurrentUserProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -61,13 +65,19 @@ public class SongServiceImpl implements SongService {
     RedisTemplate<String, String> redis;
 
 
+    @NonFinal
+    @Value("${spring.kafka.topic.listen-music-dev}")
+    String listeningMusicTopic;
+
+    @Qualifier("kafkaObjectTemplate")
+    KafkaTemplate<String, Object> kafkaObjectTemplate;
     public SongServiceImpl(
             SongRepository songRepository, ArtistRepository artistRepository,
             AlbumRepository albumRepository, GenreRepository genreRepository,
             SongArtistRoleRepository songArtistRoleRepository,
             AudioUtil audioUtil, SongPlayHistoryRepository songPlayHistoryRepository,
             @Qualifier("redisPlayCountTemplate") RedisTemplate<String, String> redis,
-            S3Service s3Service, CurrentUserProvider currentUserProvider) {
+            S3Service s3Service, CurrentUserProvider currentUserProvider, KafkaTemplate<String, Object> kafkaObjectTemplate) {
         this.songRepository = songRepository;
         this.artistRepository = artistRepository;
         this.albumRepository = albumRepository;
@@ -78,6 +88,7 @@ public class SongServiceImpl implements SongService {
         this.redis = redis;
         this.s3Service = s3Service;
         this.currentUserProvider = currentUserProvider;
+        this.kafkaObjectTemplate = kafkaObjectTemplate;
     }
 
     @Override
@@ -607,6 +618,8 @@ public class SongServiceImpl implements SongService {
         );
         // Set key Redis sống 30s → debounce
         redis.opsForValue().set(redisKey, "1", Duration.ofSeconds(30));
+
+        publishListenMusicAudit(songId);
     }
 
     private SongResponse mapToSongResponse(Song song, Album album) {
@@ -719,5 +732,26 @@ public class SongServiceImpl implements SongService {
         }
 
         return response;
+    }
+
+    private void publishListenMusicAudit(Long songId) {
+        try {
+            MusicListeningEvent event = new MusicListeningEvent(
+                    songId,
+                    System.currentTimeMillis()
+            );
+
+            kafkaObjectTemplate.send(listeningMusicTopic, event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("Kafka: Đã gửi event cho music {}", songId);
+                        } else {
+                            log.error("Kafka: Gửi event thất bại: {}", ex.getMessage());
+                        }
+                    });
+
+        } catch (Exception ex) {
+            log.error("Lỗi nghiêm trọng khi chuẩn bị gửi Kafka event: {}", ex.getMessage());
+        }
     }
 }
