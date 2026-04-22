@@ -16,5 +16,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class MusicListeningEvent {
     Long songId;
+    String songTitle;
+    String artistName;
     long timestamp;
 }
