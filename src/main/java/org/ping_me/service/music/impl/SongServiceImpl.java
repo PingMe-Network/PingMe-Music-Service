@@ -604,7 +604,7 @@ public class SongServiceImpl implements SongService {
         // Tăng playCount
         songRepository.incrementPlayCount(songId, userId);
 
-        // Lấy song để log lịch sử
+        // Lấy song để log lịch sử và lấy data gửi Kafka
         Song song = songRepository.findById(songId)
                 .orElseThrow(() -> new IllegalArgumentException("Song not found"));
 
@@ -619,7 +619,8 @@ public class SongServiceImpl implements SongService {
         // Set key Redis sống 30s → debounce
         redis.opsForValue().set(redisKey, "1", Duration.ofSeconds(30));
 
-        publishListenMusicAudit(songId);
+        // CHỖ NÀY SỬA LẠI: Truyền nguyên object song vào để lấy tên
+        publishListenMusicAudit(song);
     }
 
     private SongResponse mapToSongResponse(Song song, Album album) {
@@ -734,17 +735,27 @@ public class SongServiceImpl implements SongService {
         return response;
     }
 
-    private void publishListenMusicAudit(Long songId) {
+    private void publishListenMusicAudit(Song song) {
         try {
+            // Lọc ra tên ca sĩ chính (MAIN_ARTIST)
+            String mainArtistName = song.getArtistRoles().stream()
+                    .filter(role -> role.getRole() == ArtistRole.MAIN_ARTIST)
+                    .map(role -> role.getArtist().getName())
+                    .findFirst()
+                    .orElse("Unknown Artist");
+
+            // Lưu ý: Sếp nhớ update DTO MusicListeningEvent thêm 2 tham số này vào constructor nhé
             MusicListeningEvent event = new MusicListeningEvent(
-                    songId,
+                    song.getId(),
+                    song.getTitle(),   // THÊM TÊN BÀI HÁT
+                    mainArtistName,    // THÊM TÊN CA SĨ
                     System.currentTimeMillis()
             );
 
             kafkaObjectTemplate.send(listeningMusicTopic, event)
                     .whenComplete((result, ex) -> {
                         if (ex == null) {
-                            log.info("Kafka: Đã gửi event cho music {}", songId);
+                            log.info("Kafka: Đã gửi event cho music {}", song.getId());
                         } else {
                             log.error("Kafka: Gửi event thất bại: {}", ex.getMessage());
                         }
