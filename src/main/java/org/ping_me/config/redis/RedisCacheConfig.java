@@ -59,6 +59,7 @@ public class RedisCacheConfig {
         Map<String, RedisCacheConfiguration> configs = new HashMap<>();
 
         configs.put("role_permissions", baseCfg.entryTtl(Duration.ofHours(2)));
+        configs.put("music_dashboard", baseCfg.entryTtl(Duration.ofSeconds(30)));
 
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(baseCfg)

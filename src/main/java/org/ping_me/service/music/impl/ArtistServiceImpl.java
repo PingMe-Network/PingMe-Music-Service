@@ -9,6 +9,7 @@ import org.ping_me.dto.response.music.ArtistResponse;
 import org.ping_me.model.music.Artist;
 import org.ping_me.repository.music.ArtistRepository;
 import org.ping_me.service.music.ArtistService;
+import org.ping_me.service.music.util.MusicDashboardCacheService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,8 @@ public class ArtistServiceImpl implements ArtistService {
 
     // Service
     S3Service s3Service;
+
+    MusicDashboardCacheService musicDashboardCacheService;
 
     // Constant
     static Long MAX_IMG_SIZE = 5L * 1024L * 1024L;
@@ -69,6 +72,7 @@ public class ArtistServiceImpl implements ArtistService {
 
         // 3. Save DB
         var savedArtist = artistRepository.save(artist);
+        musicDashboardCacheService.evictMusicDashboard();
         return mapToResponse(savedArtist);
     }
 
@@ -102,6 +106,7 @@ public class ArtistServiceImpl implements ArtistService {
 
         // 4. Save DB
         var updatedArtist = artistRepository.save(artist);
+        musicDashboardCacheService.evictMusicDashboard();
         return mapToResponse(updatedArtist);
     }
 
@@ -129,6 +134,7 @@ public class ArtistServiceImpl implements ArtistService {
         // 3. Đánh dấu xóa
         artist.setDeleted(true);
         artistRepository.save(artist);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     @Override
@@ -140,6 +146,7 @@ public class ArtistServiceImpl implements ArtistService {
 
         artist.setDeleted(false);
         artistRepository.save(artist);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     @Override
@@ -163,6 +170,7 @@ public class ArtistServiceImpl implements ArtistService {
 
         // 2. Xóa vĩnh viễn trong DB
         artistRepository.delete(artist);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
 
