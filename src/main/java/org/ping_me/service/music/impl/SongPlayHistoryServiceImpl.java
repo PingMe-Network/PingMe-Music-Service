@@ -42,7 +42,7 @@ public class SongPlayHistoryServiceImpl implements SongPlayHistoryService {
         if (cached != null) return cached;
 
         List<TopSongPlayCounterDto> topSongs = getTopSongsToday(limit);
-        redis.opsForValue().set(redisKey, topSongs, Duration.ofMinutes(5));
+        redis.opsForValue().set(redisKey, topSongs, Duration.ofSeconds(30));
 
         return topSongs;
     }
@@ -55,7 +55,7 @@ public class SongPlayHistoryServiceImpl implements SongPlayHistoryService {
         if (cached != null) return cached;
 
         List<TopSongPlayCounterDto> topSongs = getTopSongsThisWeek(limit);
-        redis.opsForValue().set(redisKey, topSongs, Duration.ofMinutes(10));
+        redis.opsForValue().set(redisKey, topSongs, Duration.ofSeconds(30));
         return topSongs;
     }
 
@@ -67,7 +67,7 @@ public class SongPlayHistoryServiceImpl implements SongPlayHistoryService {
         if (cached != null) return cached;
 
         List<TopSongPlayCounterDto> topSongs = getTopSongsThisMonth(limit);
-        redis.opsForValue().set(redisKey, topSongs, Duration.ofMinutes(10));
+        redis.opsForValue().set(redisKey, topSongs, Duration.ofSeconds(30));
         return topSongs;
     }
 

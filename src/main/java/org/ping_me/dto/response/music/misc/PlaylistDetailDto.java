@@ -22,8 +22,7 @@ public class PlaylistDetailDto {
 
     public static PlaylistDetailDto from(Playlist p, List<PlaylistSong> items) {
         var list = items.stream()
-                .map(ps -> new PlaylistSongDto(ps.getId(), ps.getSong().getId(), ps.getPosition(),
-                        ps.getSong().getTitle()))
+                .map(PlaylistSongDto::from)
                 .collect(Collectors.toList());
         return new PlaylistDetailDto(p.getId(), p.getName(), p.getIsPublic(), list);
     }

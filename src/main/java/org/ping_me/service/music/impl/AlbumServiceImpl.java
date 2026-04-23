@@ -12,6 +12,7 @@ import org.ping_me.repository.music.AlbumPlayHistoryRepository;
 import org.ping_me.repository.music.AlbumRepository;
 import org.ping_me.repository.music.ArtistRepository;
 import org.ping_me.service.music.AlbumService;
+import org.ping_me.service.music.util.MusicDashboardCacheService;
 import org.ping_me.service.user.CurrentUserProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -44,13 +45,16 @@ public class AlbumServiceImpl implements AlbumService {
     // Redis
     RedisTemplate<String, String> redis;
 
+    MusicDashboardCacheService musicDashboardCacheService;
+
     public AlbumServiceImpl(
             AlbumRepository albumRepository,
             ArtistRepository artistRepository,
             AlbumPlayHistoryRepository albumPlayHistoryRepository,
             S3Service s3Service,
             CurrentUserProvider currentUserProvider,
-            @Qualifier("redisPlayCountTemplate") RedisTemplate<String, String> redis
+            @Qualifier("redisPlayCountTemplate") RedisTemplate<String, String> redis,
+            MusicDashboardCacheService musicDashboardCacheService
     ) {
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
@@ -58,6 +62,7 @@ public class AlbumServiceImpl implements AlbumService {
         this.s3Service = s3Service;
         this.currentUserProvider = currentUserProvider;
         this.redis = redis;
+        this.musicDashboardCacheService = musicDashboardCacheService;
     }
 
     @Override
@@ -126,6 +131,7 @@ public class AlbumServiceImpl implements AlbumService {
 
         // 6. Lưu và trả về
         var savedAlbum = albumRepository.save(album);
+        musicDashboardCacheService.evictMusicDashboard();
         return mapToResponse(savedAlbum);
     }
 
@@ -158,6 +164,7 @@ public class AlbumServiceImpl implements AlbumService {
         }
 
         var savedAlbum = albumRepository.save(album);
+        musicDashboardCacheService.evictMusicDashboard();
         return mapToResponse(savedAlbum);
     }
 
@@ -169,6 +176,7 @@ public class AlbumServiceImpl implements AlbumService {
 
         album.setDeleted(true);
         albumRepository.save(album);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     @Override
@@ -190,6 +198,7 @@ public class AlbumServiceImpl implements AlbumService {
 
         // Xóa DB (Hibernate tự xóa dòng trong bảng trung gian)
         albumRepository.delete(album);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     @Override
@@ -202,6 +211,7 @@ public class AlbumServiceImpl implements AlbumService {
 
         album.setDeleted(false);
         albumRepository.save(album);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     @Override
@@ -230,6 +240,9 @@ public class AlbumServiceImpl implements AlbumService {
         );
 
         redis.opsForValue().set(redisKey, "1", Duration.ofSeconds(30));
+
+        // Play events are high-frequency, so eviction is throttled globally.
+        musicDashboardCacheService.evictMusicDashboardOnPlayIfNeeded();
     }
 
     // --- Helper Methods ---

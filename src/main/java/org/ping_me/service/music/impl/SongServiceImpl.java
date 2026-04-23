@@ -17,6 +17,7 @@ import org.ping_me.model.constant.ArtistRole;
 import org.ping_me.model.music.*;
 import org.ping_me.repository.music.*;
 import org.ping_me.service.music.SongService;
+import org.ping_me.service.music.util.MusicDashboardCacheService;
 import org.ping_me.service.music.util.AudioUtil;
 import org.ping_me.service.user.CurrentUserProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -64,6 +65,8 @@ public class SongServiceImpl implements SongService {
     // Redis
     RedisTemplate<String, String> redis;
 
+    MusicDashboardCacheService musicDashboardCacheService;
+
 
     @NonFinal
     @Value("${spring.kafka.topic.listen-music-dev}")
@@ -77,7 +80,10 @@ public class SongServiceImpl implements SongService {
             SongArtistRoleRepository songArtistRoleRepository,
             AudioUtil audioUtil, SongPlayHistoryRepository songPlayHistoryRepository,
             @Qualifier("redisPlayCountTemplate") RedisTemplate<String, String> redis,
-            S3Service s3Service, CurrentUserProvider currentUserProvider, KafkaTemplate<String, Object> kafkaObjectTemplate) {
+            S3Service s3Service,
+            CurrentUserProvider currentUserProvider,
+            KafkaTemplate<String, Object> kafkaObjectTemplate,
+            MusicDashboardCacheService musicDashboardCacheService) {
         this.songRepository = songRepository;
         this.artistRepository = artistRepository;
         this.albumRepository = albumRepository;
@@ -89,6 +95,7 @@ public class SongServiceImpl implements SongService {
         this.s3Service = s3Service;
         this.currentUserProvider = currentUserProvider;
         this.kafkaObjectTemplate = kafkaObjectTemplate;
+        this.musicDashboardCacheService = musicDashboardCacheService;
     }
 
     @Override
@@ -362,6 +369,7 @@ public class SongServiceImpl implements SongService {
 
         List<Song> songs = new ArrayList<>();
         songs.add(savedSongWithDetails);
+        musicDashboardCacheService.evictMusicDashboard();
         return flattenSongsWithAlbums(songs);
     }
 
@@ -496,6 +504,7 @@ public class SongServiceImpl implements SongService {
 
         List<Song> songs = new ArrayList<>();
         songs.add(updatedSongWithDetails);
+        musicDashboardCacheService.evictMusicDashboard();
         return flattenSongsWithAlbums(songs);
     }
 
@@ -510,6 +519,7 @@ public class SongServiceImpl implements SongService {
 
         // Lưu lại trạng thái mới
         songRepository.save(song);
+        musicDashboardCacheService.evictMusicDashboard();
 
         // Tùy chọn: Nếu muốn user không tìm thấy bài hát này trong Album nữa,
         // bạn có thể remove nó khỏi album (logic giống hard delete) hoặc giữ nguyên.
@@ -525,6 +535,7 @@ public class SongServiceImpl implements SongService {
 
         song.setDeleted(false);
         songRepository.save(song);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     @Override
@@ -563,6 +574,7 @@ public class SongServiceImpl implements SongService {
         // Hibernate sẽ tự động xóa các dòng trong bảng con song_artist_role (do CascadeType.ALL)
         // và bảng trung gian song_genre.
         songRepository.delete(song);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     // --- Helper Methods ---
@@ -618,6 +630,9 @@ public class SongServiceImpl implements SongService {
         );
         // Set key Redis sống 30s → debounce
         redis.opsForValue().set(redisKey, "1", Duration.ofSeconds(30));
+
+        // Play events are high-frequency, so eviction is throttled globally.
+        musicDashboardCacheService.evictMusicDashboardOnPlayIfNeeded();
 
         // CHỖ NÀY SỬA LẠI: Truyền nguyên object song vào để lấy tên
         publishListenMusicAudit(song);

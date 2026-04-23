@@ -9,6 +9,7 @@ import org.ping_me.dto.response.music.misc.GenreDto;
 import org.ping_me.model.music.Genre;
 import org.ping_me.repository.music.GenreRepository;
 import org.ping_me.service.music.GenreService;
+import org.ping_me.service.music.util.MusicDashboardCacheService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,8 @@ import java.util.HashSet;
 public class GenreServiceImpl implements GenreService {
     // Repository
     GenreRepository genreRepository;
+
+    MusicDashboardCacheService musicDashboardCacheService;
 
     @Override
     public GenreResponse getGenreById(Long id) {
@@ -61,6 +64,7 @@ public class GenreServiceImpl implements GenreService {
         // isDeleted mặc định false (do entity config)
 
         Genre savedGenre = genreRepository.save(genre);
+        musicDashboardCacheService.evictMusicDashboard();
         return mapToResponse(savedGenre);
     }
 
@@ -80,6 +84,7 @@ public class GenreServiceImpl implements GenreService {
         genre.setName(request.getName());
 
         Genre updatedGenre = genreRepository.save(genre);
+        musicDashboardCacheService.evictMusicDashboard();
         return mapToResponse(updatedGenre);
     }
 
@@ -102,6 +107,7 @@ public class GenreServiceImpl implements GenreService {
 
         genre.setDeleted(true);
         genreRepository.save(genre);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     @Override
@@ -112,6 +118,7 @@ public class GenreServiceImpl implements GenreService {
 
         genre.setDeleted(false);
         genreRepository.save(genre);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     @Override
@@ -128,6 +135,7 @@ public class GenreServiceImpl implements GenreService {
         }
 
         genreRepository.delete(genre);
+        musicDashboardCacheService.evictMusicDashboard();
     }
 
     // --- Helper ---
