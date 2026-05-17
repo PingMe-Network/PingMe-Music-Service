@@ -1,28 +1,25 @@
-# PingMe Core Service
+# PingMe Music Service
 
-`PingMe Core Service` là backend chính của hệ thống PingMe, xây dựng bằng Spring Boot.
-Service cung cấp:
-- REST API
-- WebSocket (STOMP) cho realtime
-- Lưu trữ dữ liệu với MariaDB + MongoDB
-- Cache với Redis
-- Tích hợp S3, AI và các dịch vụ ngoài qua OpenFeign
+`PingMe Music Service` là backend cho phần nghe nhạc của hệ thống PingMe, xây dựng bằng Spring Boot.
+Service hiện cung cấp:
+- REST API cho domain music
+- WebSocket (STOMP) cho shared listening session
+- Cache / session state với Redis
+- Tích hợp các thành phần hạ tầng cần thiết cho music workflow
 
 ## Công nghệ sử dụng
 - Java 21, Spring Boot 4
 - Spring Web MVC, Validation, Security (OAuth2 Resource Server)
-- Spring Data JPA (MariaDB), Spring Data MongoDB
+- Spring Data JPA
 - Spring Cache + Redis
 - WebSocket (STOMP)
-- OpenFeign, Resilience4j
-- Spring AI (OpenAI), Groq AI
+- Kafka
 - AWS SDK (S3)
 
 ## Yêu cầu môi trường
 - JDK 21
 - Maven 3.9+
 - MariaDB
-- MongoDB
 - Redis
 - (Tuỳ chọn) AWS credentials để upload file lên S3
 
@@ -97,6 +94,14 @@ java -jar target/pingme-core-service-1.0.0.jar
   -Djib.to.auth.username=YOUR_DOCKER_USERNAME \
   -Djib.to.auth.password=YOUR_DOCKER_PASSWORD
 ```
+
+## WebSocket shared listening contract
+- WebSocket endpoint: `/music-service/ws-music`
+- Client command destination: `/app/music/users/{hostUserId}/command`
+- Session topic: `/topic/music/users/{hostUserId}/session`
+- Contract DTOs are under `org.ping_me.dto.music.session`
+
+Các command/event hiện có được định nghĩa theo `plan-0-shared-contracts.md`.
 
 ## CI/CD
 GitHub Actions build và đẩy Docker image bằng Jib, sau đó deploy lên AWS Elastic Beanstalk.

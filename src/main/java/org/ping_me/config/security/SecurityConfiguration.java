@@ -1,6 +1,5 @@
 package org.ping_me.config.security;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -8,10 +7,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
 
 /**
  * Admin 8/3/2025
@@ -28,6 +23,8 @@ public class SecurityConfiguration {
             // Chú ý: Nếu trong application.properties bạn có cấu hình server.servlet.context-path=/core-service
             // thì ở đây Spring Security sẽ tự động bỏ qua chữ /core-service. Bạn chỉ cần ghi là "/ws/**"
             "/core-service/ws/**", // Tạm thời mình giữ nguyên theo code của bạn
+            "/music-service/ws-music",
+            "/music-service/ws-music/**",
 
             // Health check
             "/actuator/health",
@@ -38,7 +35,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint
-    ) throws Exception {
+    ) {
         httpSecurity
                 // 1. TẮT CORS (Gateway đã thầu vụ này rồi)
                 .cors(AbstractHttpConfigurer::disable)
