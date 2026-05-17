@@ -49,6 +49,17 @@ public class SongController {
         return ResponseEntity.ok(new ApiResponse<>(songService.getSongById(id)));
     }
 
+    @Operation(
+            summary = "Lay nhieu bai hat theo ID",
+            description = "Tra ve danh sach bai hat theo thu tu ID duoc truyen vao"
+    )
+    @GetMapping("/batch")
+    public ResponseEntity<ApiResponse<List<SongResponse>>> getSongsByIds(
+            @RequestParam("ids") List<Long> ids
+    ) {
+        return ResponseEntity.ok(new ApiResponse<>(songService.getSongsByIds(ids)));
+    }
+
     // ========================= GET ALL =========================
     @Operation(
             summary = "Lấy danh sách tất cả bài hát",

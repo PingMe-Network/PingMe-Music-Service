@@ -19,6 +19,8 @@ public interface SongService {
 
     SongResponse getSongById(Long id);
 
+    List<SongResponse> getSongsByIds(List<Long> ids);
+
     Page<SongResponseWithAllAlbum> getSongByGenre(Long id, Pageable pageable);
 
 

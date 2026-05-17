@@ -25,7 +25,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override
-    public @NonNull UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public @NonNull UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
         // Truy vấn User trong DB theo email.
         // Nếu không tìm thấy sẽ ném ra UsernameNotFoundException.
         // (User ở đây là entity: me.huynhducphu.PingMe_Backend.model.User)

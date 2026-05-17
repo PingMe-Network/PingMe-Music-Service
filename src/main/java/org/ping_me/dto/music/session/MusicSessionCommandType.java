@@ -5,6 +5,8 @@ package org.ping_me.dto.music.session;
  */
 public enum MusicSessionCommandType {
     START_SESSION,
+    JOIN_SESSION,
+    LEAVE_SESSION,
     PLAY,
     PAUSE,
     SEEK,

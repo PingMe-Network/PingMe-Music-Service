@@ -19,7 +19,7 @@ public class MusicSessionEventPublisher {
     public void broadcast(String hostUserId, MusicSessionEventType eventType, Object data) {
         messagingTemplate.convertAndSend(
                 MusicWebSocketDestinations.sessionTopic(hostUserId),
-                new MusicSessionEventMessage(eventType.name(), data)
+                new MusicSessionEventMessage(eventType.name(), data, System.currentTimeMillis())
         );
     }
 
@@ -43,4 +43,3 @@ public class MusicSessionEventPublisher {
         broadcast(hostUserId, MusicSessionEventType.MUSIC_SESSION_ENDED, data);
     }
 }
-

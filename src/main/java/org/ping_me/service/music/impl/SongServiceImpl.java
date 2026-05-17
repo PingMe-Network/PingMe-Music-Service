@@ -118,6 +118,41 @@ public class SongServiceImpl implements SongService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<SongResponse> getSongsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> uniqueIds = ids.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (uniqueIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Song> songsById = songRepository.findSongsWithDetailsByIds(uniqueIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        Song::getId,
+                        song -> song,
+                        (existing, ignored) -> existing
+                ));
+
+        return ids.stream()
+                .map(songsById::get)
+                .filter(Objects::nonNull)
+                .map(song -> mapToSongResponse(
+                        song,
+                        song.getAlbums() != null && !song.getAlbums().isEmpty()
+                                ? song.getAlbums().iterator().next()
+                                : null
+                ))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<SongResponse> getSongByTitle(String title, Pageable pageable) {
         List<Song> songs = songRepository.findSongsWithAlbumsByTitle(title);
         List<SongResponse> flattened = flattenSongsWithAlbums(songs);

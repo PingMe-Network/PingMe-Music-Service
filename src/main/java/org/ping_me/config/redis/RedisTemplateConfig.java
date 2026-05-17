@@ -16,18 +16,15 @@ public class RedisTemplateConfig {
     // =========================================================
     @Bean(name = "redisPlayCountTemplate")
     public RedisTemplate<String, String> redisPlayCountTemplate(RedisConnectionFactory cf) {
-        RedisTemplate<String, String> tpl = new RedisTemplate<>();
-        tpl.setConnectionFactory(cf);
+        return createStringRedisTemplate(cf);
+    }
 
-        var stringSer = new StringRedisSerializer();
-
-        tpl.setKeySerializer(stringSer);
-        tpl.setHashKeySerializer(stringSer);
-        tpl.setValueSerializer(stringSer);
-        tpl.setHashValueSerializer(stringSer);
-
-        tpl.afterPropertiesSet();
-        return tpl;
+    // =========================================================
+    // RedisTemplate cho music session state
+    // =========================================================
+    @Bean(name = "musicSessionTemplate")
+    public RedisTemplate<String, String> musicSessionTemplate(RedisConnectionFactory cf) {
+        return createStringRedisTemplate(cf);
     }
 
     // =========================================================
@@ -48,6 +45,22 @@ public class RedisTemplateConfig {
         tpl.setHashKeySerializer(keySer);
         tpl.setValueSerializer(valSer);
         tpl.setHashValueSerializer(valSer);
+
+        tpl.afterPropertiesSet();
+        return tpl;
+    }
+
+    // Helper to avoid duplicating the String-based RedisTemplate setup
+    private RedisTemplate<String, String> createStringRedisTemplate(RedisConnectionFactory cf) {
+        RedisTemplate<String, String> tpl = new RedisTemplate<>();
+        tpl.setConnectionFactory(cf);
+
+        var stringSer = new StringRedisSerializer();
+
+        tpl.setKeySerializer(stringSer);
+        tpl.setHashKeySerializer(stringSer);
+        tpl.setValueSerializer(stringSer);
+        tpl.setHashValueSerializer(stringSer);
 
         tpl.afterPropertiesSet();
         return tpl;

@@ -56,7 +56,7 @@ class MusicWebSocketContractsTest {
         assertEquals(MusicSessionCommandType.PLAY, commandRoundTrip.command());
         assertInstanceOf(java.util.Map.class, commandRoundTrip.payload());
 
-        var event = new MusicSessionEventMessage("MUSIC_SESSION_STATE", stateRoundTrip);
+        var event = new MusicSessionEventMessage("MUSIC_SESSION_STATE", stateRoundTrip, 1000000L);
         String eventJson = objectMapper.writeValueAsString(event);
         assertTrue(eventJson.contains("MUSIC_SESSION_STATE"));
         assertTrue(eventJson.contains("host-1"));

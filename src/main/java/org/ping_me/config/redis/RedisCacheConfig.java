@@ -60,6 +60,7 @@ public class RedisCacheConfig {
 
         configs.put("role_permissions", baseCfg.entryTtl(Duration.ofHours(2)));
         configs.put("music_dashboard", baseCfg.entryTtl(Duration.ofSeconds(30)));
+        configs.put("music_friendship_check", baseCfg.entryTtl(Duration.ofMinutes(10)));
 
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(baseCfg)

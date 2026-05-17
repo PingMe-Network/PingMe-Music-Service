@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record MusicSessionEventMessage(
         String eventType,
-        Object data
+        Object data,
+        long serverTimeMs
 ) {
 }
-
