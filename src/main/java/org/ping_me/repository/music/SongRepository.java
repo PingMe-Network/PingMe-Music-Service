@@ -30,6 +30,15 @@ public interface SongRepository extends JpaRepository<Song, Long> {
     )
     Page<Long> findSongIds(Pageable pageable);
 
+    @Query(
+            value = "SELECT s.id FROM Song s WHERE s.songUrl IS NOT NULL AND s.songUrl <> ''",
+            countQuery = "SELECT COUNT(s.id) FROM Song s WHERE s.songUrl IS NOT NULL AND s.songUrl <> ''"
+    )
+    Page<Long> findPlayableSongIds(Pageable pageable);
+
+    @Query("SELECT COUNT(s.id) FROM Song s WHERE s.songUrl IS NOT NULL AND s.songUrl <> ''")
+    long countPlayableSongs();
+
     // Load Song cùng lúc với ArtistRoles, Artist, Genres và Albums để tránh lỗi LazyLoading hoặc N+1 query
     @Query("SELECT s FROM Song s " +
             "LEFT JOIN FETCH s.artistRoles ar " +
