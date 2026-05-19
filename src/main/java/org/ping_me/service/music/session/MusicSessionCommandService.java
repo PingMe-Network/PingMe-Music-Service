@@ -100,22 +100,26 @@ public class MusicSessionCommandService {
         return sessionRepository.update(hostUserId, current -> {
             StartSessionPayload dto = objectMapper.convertValue(payload == null ? Map.of() : payload, StartSessionPayload.class);
             List<String> incomingQueue = dto == null || dto.queue() == null ? List.of() : dto.queue();
+            boolean restartingFromEndingState = current.isEndingAfterCurrentTrack();
             
             String currentTrackId = dto != null ? dto.currentTrackId() : current.currentTrackId();
             long positionMs = dto != null && dto.positionMs() != null ? dto.positionMs() : current.positionMs();
             boolean playing = dto != null && dto.isPlaying() != null ? dto.isPlaying() : current.isPlaying();
             long startedAtEpochMs = playing ? System.currentTimeMillis() : current.startedAtEpochMs();
 
-            List<String> listeners = new ArrayList<>(current.activeListenerIds());
-            if (!listeners.contains(requesterUserId)) {
-                listeners.add(requesterUserId);
-            }
+            // Khi host start lại sau trạng thái "ending", reset listener về chỉ host
+            // để tránh mang theo presence của phiên cũ.
+            List<String> listeners = restartingFromEndingState
+                    ? new ArrayList<>(List.of(requesterUserId))
+                    : new ArrayList<>(current.activeListenerIds());
+            if (!listeners.contains(requesterUserId)) listeners.add(requesterUserId);
 
             MusicSessionState next = current.withActiveListenerIds(List.copyOf(listeners))
                     .withEndingAfterCurrentTrack(false)
                     .withPlayback(playing, currentTrackId, positionMs, startedAtEpochMs);
             
-            if (current.queue().isEmpty() && !incomingQueue.isEmpty()) {
+            // Khi restart từ ending state, cho phép host thiết lập queue mới ngay.
+            if ((restartingFromEndingState || current.queue().isEmpty()) && !incomingQueue.isEmpty()) {
                 next = next.withQueue(incomingQueue);
             }
             
@@ -292,6 +296,7 @@ public class MusicSessionCommandService {
         }
 
         if (current.isEndingAfterCurrentTrack() &&
+                commandType != MusicSessionCommandType.START_SESSION &&
                 commandType != MusicSessionCommandType.LEAVE_SESSION &&
                 commandType != MusicSessionCommandType.STOP_SESSION) {
             throw new IllegalArgumentException("Music session is ending and cannot accept new commands");
