@@ -4,6 +4,7 @@ import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ping_me.repository.music.session.MusicSessionRedisRepository;
 import org.ping_me.service.music.session.MusicSessionAccessService;
 import org.ping_me.service.music.session.MusicSessionTokenManager;
 import org.springframework.messaging.Message;
@@ -19,6 +20,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
+import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
@@ -37,10 +39,15 @@ public class MusicStompAuthInterceptor implements ChannelInterceptor {
     private final JwtDecoder jwtDecoder;
     private final MusicSessionAccessService musicSessionAccessService;
     private final MusicSessionTokenManager tokenManager;
+    private final MusicSessionRedisRepository sessionRepository;
     private final CircuitBreaker coreServiceCircuitBreaker;
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) {
+    public Message<?> preSend(@Nullable Message<?> message, @Nullable MessageChannel channel) {
+        if (message == null) {
+            return null;
+        }
+
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
         if (accessor == null) return message;
 
@@ -56,7 +63,7 @@ public class MusicStompAuthInterceptor implements ChannelInterceptor {
     private void handleConnect(StompHeaderAccessor accessor) {
         String authHeader = accessor.getFirstNativeHeader("Authorization");
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
-            throw new AccessDeniedException("Token không hợp lệ");
+            throw new AccessDeniedException("Token khong hop le");
         }
 
         String token = authHeader.substring(7);
@@ -66,11 +73,11 @@ public class MusicStompAuthInterceptor implements ChannelInterceptor {
             Authentication auth = new UsernamePasswordAuthenticationToken(userPrincipal, null, Collections.emptyList());
             accessor.setUser(auth);
         } catch (JwtException e) {
-            log.debug("WebSocket CONNECT bị từ chối do JWT không hợp lệ hoặc đã hết hạn");
-            throw new AccessDeniedException("Token không hợp lệ");
+            log.debug("WebSocket CONNECT bi tu choi do JWT khong hop le hoac da het han");
+            throw new AccessDeniedException("Token khong hop le");
         } catch (Exception e) {
-            log.warn("Xác thực WebSocket thất bại: {}", e.getMessage());
-            throw new AccessDeniedException("Token không hợp lệ");
+            log.warn("Xac thuc WebSocket that bai: {}", e.getMessage());
+            throw new AccessDeniedException("Token khong hop le");
         }
     }
 
@@ -80,7 +87,7 @@ public class MusicStompAuthInterceptor implements ChannelInterceptor {
 
         Long userId = extractAuthenticatedUserId(accessor);
         if (userId == null) {
-            throw new AccessDeniedException("Yêu cầu xác thực");
+            throw new AccessDeniedException("Yeu cau xac thuc");
         }
 
         Long hostUserId = extractHostUserId(destination);
@@ -88,44 +95,47 @@ public class MusicStompAuthInterceptor implements ChannelInterceptor {
             Long friendSessionUserId = extractFriendSessionUserId(destination);
             if (friendSessionUserId == null) return;
             if (!friendSessionUserId.equals(userId)) {
-                throw new AccessDeniedException("Bạn chỉ có thể theo dõi phiên nghe của bạn bè của chính mình");
+                throw new AccessDeniedException("Ban chi co the theo doi phien nghe cua ban be cua chinh minh");
             }
             return;
         }
 
-        // Path 1: Try friendship validation via Core Service (preferred)
         try {
             boolean isFriend = coreServiceCircuitBreaker.executeSupplier(() ->
                     musicSessionAccessService.canJoinSession(String.valueOf(hostUserId), String.valueOf(userId))
             );
             if (isFriend) {
                 log.debug("[MusicStompAuth] User {} authorized via friendship with host {}", userId, hostUserId);
-                return;  // Access granted
+                return;
             }
         } catch (CallNotPermittedException e) {
-            // Circuit breaker is open, Core Service is unavailable
             log.warn("[MusicStompAuth] Circuit breaker open: Core Service unavailable, falling back to token validation");
         } catch (Exception e) {
-            // Timeout or other error from Core Service
             log.warn("[MusicStompAuth] Friendship check failed for user {} and host {}: {}. Falling back to token validation",
                     userId, hostUserId, e.getMessage());
         }
 
-        // Path 2: Fall back to token validation (when Core Service is unavailable)
         String shareToken = accessor.getFirstNativeHeader("X-Session-Token");
         if (shareToken != null) {
             MusicSessionTokenManager.SessionTokenClaims claims = tokenManager.validateSessionToken(shareToken);
             if (claims != null && claims.getHostUserId().equals(String.valueOf(hostUserId))) {
                 if (claims.getPermissions().contains("join")) {
                     log.debug("[MusicStompAuth] User {} authorized via session token for host {}", userId, hostUserId);
-                    return;  // Access granted
+                    return;
                 }
             }
         }
 
-        // Both paths failed -> deny access
+        boolean alreadyParticipant = sessionRepository.findByHostUserId(String.valueOf(hostUserId))
+                .map(state -> state.activeListenerIds().contains(String.valueOf(userId)))
+                .orElse(false);
+        if (alreadyParticipant) {
+            log.debug("[MusicStompAuth] User {} authorized as existing participant for host {}", userId, hostUserId);
+            return;
+        }
+
         log.warn("[MusicStompAuth] Access denied for user {} to host {}: not a friend and no valid token", userId, hostUserId);
-        throw new AccessDeniedException("Bạn không có quyền tham gia phiên nghe này");
+        throw new AccessDeniedException("Ban khong co quyen tham gia phien nghe nay");
     }
 
     private Long extractAuthenticatedUserId(StompHeaderAccessor accessor) {
@@ -183,4 +193,3 @@ public class MusicStompAuthInterceptor implements ChannelInterceptor {
         return user;
     }
 }
-
